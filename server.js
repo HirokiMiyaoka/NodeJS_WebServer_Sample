@@ -66,4 +66,4 @@ server.on( 'request', function ( req, res )
 	} );
 } );
 
-server.listen( settings.port || 8090, settings.host || '127.0.0.1' );
+server.listen( settings.port || 8080, settings.host || '127.0.0.1' );
