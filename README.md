@@ -1,4 +1,4 @@
-# NodeJS_WebServer_Sample
+# NodeJS WebServer Sample
 
 NodeJsにおける、Webサーバーのサンプルです。
 
@@ -15,7 +15,7 @@ npm run start
 デフォルトは以下。
 
 * URL
-    * http://127.0.0.1:8090
+    * http://127.0.0.1:8080
 * ドキュメントルート
     * public/
 
@@ -30,7 +30,7 @@ npm run start
 ```
 {
 	"docroot": "public",
-	"port": 8090,
+	"port": 8080,
 	"host": "127.0.0.1",
 	"mime": {
 		"png": "image/png",
