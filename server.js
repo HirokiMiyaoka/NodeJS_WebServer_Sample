@@ -50,8 +50,8 @@ function fileExists( filepath )
 
 server.on( 'request', function ( req, res )
 {
-	var filepath = req.url || '/';
-	if ( filepath.match( /\/$/ ) ) { $filepath += 'index.html'; }
+	var filepath = ( req.url || '/' ).split( '?' )[ 0 ];
+	if ( filepath.match( /\/$/ ) ) { filepath += 'index.html'; }
 	filepath = path.join( docroot, filepath );
 
 	if ( !fileExists( filepath ) ) { return e404( res ); }
