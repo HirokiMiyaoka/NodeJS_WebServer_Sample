@@ -7,7 +7,7 @@ var settings = require('./config.json');
 
 console.log( settings );
 
-var docroot = settings.docroot || 'public';
+var docroot = settings.docroot || 'docs';
 
 var MIME =
 {
@@ -21,6 +21,7 @@ var MIME =
 	'png':	'image/png',
 	'txt':	'text/plain',
 	'zip':	'application/zip',
+	'wasm':	'application/wasm',
 };
 
 if ( settings.mime )
@@ -48,6 +49,28 @@ function fileExists( filepath )
 	return false;
 }
 
+function responseText( res, filepath, mime )
+{
+	fs.readFile( filepath, 'utf-8', function( err, data )
+	{
+		if( err ) { return e404( res ); }
+		res.writeHead( 200, { 'Content-Type': mime } );
+		res.write( data );
+		res.end();
+	} );
+}
+
+function responseBinary( res, filepath, mime )
+{
+	fs.readFile( filepath, function( err, data )
+	{
+		if( err ) { return e404( res ); }
+		res.writeHead( 200, { 'Content-Type': mime } );
+		res.write( data );
+		res.end();
+	} );
+}
+
 server.on( 'request', function ( req, res )
 {
 	var filepath = ( req.url || '/' ).split( '?' )[ 0 ];
@@ -56,14 +79,14 @@ server.on( 'request', function ( req, res )
 
 	if ( !fileExists( filepath ) ) { return e404( res ); }
 
-	fs.readFile( filepath, 'utf-8', function( err, data )
-	{
-		if( err ) { return e404( res ); }
-		var extname = path.extname( filepath ).replace( '.', '' );
-		res.writeHead( 200, { 'Content-Type': MIME[ extname ] || 'text/plain' } );
-		res.write( data );
-		res.end();
-	} );
+	var extname = path.extname( filepath ).replace( '.', '' );
+	var mime = MIME[ extname ] || 'text/plain';
+
+	if ( mime.match( /^text/ ) ) {
+		responseText( res, filepath, mime );
+	} else {
+		responseBinary( res, filepath, mime );
+	}
 } );
 
 server.listen( settings.port || 8080, settings.host || '127.0.0.1' );
