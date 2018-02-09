@@ -2,12 +2,11 @@ var http     = require( 'http' );
 var fs       = require( 'fs' );
 var path     = require( 'path' );
 
-var server   = http.createServer();
 var settings = require('./config.json');
 
 console.log( settings );
 
-var docroot = settings.docroot || 'docs';
+Format( 'docs', 'localhost', 8080 );
 
 var MIME =
 {
@@ -18,75 +17,103 @@ var MIME =
 	'ico':	'image/x-icon',
 	'jpg':	'image/jpeg',
 	'js':	'text/javascript',
+	'json':	'application/json',
+	'jsonp':	'application/javascript',
 	'png':	'image/png',
 	'txt':	'text/plain',
 	'zip':	'application/zip',
 	'wasm':	'application/wasm',
 };
 
-if ( settings.mime )
+// ======================================== //
+
+function Format( docroot, host, port )
 {
-	Object.keys( settings.mime ).forEach( function( key )
+	if ( typeof settings.docroot !== 'string' || !settings.docroot )
 	{
-		MIME[ key ] = settings.mime[ key ];
-	} );
+		settings.docroot = docroot;
+	}
+
+	if ( typeof settings.port !== 'number' )
+	{
+		settings.port = port;
+	}
+
+	if ( typeof settings.host !== 'string' )
+	{
+		settings.host = host;
+	}
+
+	if ( typeof settings.mime === 'object' )
+	{
+		Object.keys( settings.mime ).forEach( function( key )
+		{
+			MIME[ key ] = settings.mime[ key ];
+		} );
+	}
 }
 
-function e404( res )
+function E404( res )
 {
 	res.writeHead( 404, { 'Content-Type': 'text/plain' } );
 	res.write( '404: page not found.' );
 	res.end();
 }
 
-function fileExists( filepath )
+function FileExists( filepath )
 {
 	try
 	{
-		fs.statSync(filepath);
-		return true
+		return fs.statSync( filepath ).isFile();
 	} catch( err ) {}
 	return false;
 }
 
-function responseText( res, filepath, mime )
+function ResponseText( res, filepath, mime )
 {
 	fs.readFile( filepath, 'utf-8', function( err, data )
 	{
-		if( err ) { return e404( res ); }
+		if( err ) { return E404( res ); }
 		res.writeHead( 200, { 'Content-Type': mime } );
 		res.write( data );
 		res.end();
 	} );
 }
 
-function responseBinary( res, filepath, mime )
+function ResponseBinary( res, filepath, mime )
 {
 	fs.readFile( filepath, function( err, data )
 	{
-		if( err ) { return e404( res ); }
+		if( err ) { return E404( res ); }
 		res.writeHead( 200, { 'Content-Type': mime } );
 		res.write( data );
 		res.end();
 	} );
 }
 
-server.on( 'request', function ( req, res )
+function ServerStart( settings )
 {
-	var filepath = ( req.url || '/' ).split( '?' )[ 0 ];
-	if ( filepath.match( /\/$/ ) ) { filepath += 'index.html'; }
-	filepath = path.join( docroot, filepath );
+	var server = http.createServer();
+	server.on( 'request', function ( req, res )
+	{
+		var filepath = ( req.url || '/' ).split( '?' )[ 0 ];
+		if ( filepath.match( /\/$/ ) ) { filepath += 'index.html'; }
+		filepath = path.join( settings.docroot, filepath );
 
-	if ( !fileExists( filepath ) ) { return e404( res ); }
+		if ( !FileExists( filepath ) ) { return E404( res ); }
 
-	var extname = path.extname( filepath ).replace( '.', '' );
-	var mime = MIME[ extname ] || 'text/plain';
+		var extname = path.extname( filepath ).replace( '.', '' );
+		var mime = MIME[ extname ] || 'text/plain';
 
-	if ( mime.match( /^text/ ) ) {
-		responseText( res, filepath, mime );
-	} else {
-		responseBinary( res, filepath, mime );
-	}
-} );
+		if ( mime.indexOf( 'text/' ) === 0 ) {
+			ResponseText( res, filepath, mime );
+		} else {
+			ResponseBinary( res, filepath, mime );
+		}
+	} );
 
-server.listen( settings.port || 8080, settings.host || '127.0.0.1' );
+	console.log( settings.host + ( settings.port === 80 ?  '' : ':' + settings.port ) );
+	server.listen( settings.port, settings.host );
+}
+
+ServerStart( settings );
