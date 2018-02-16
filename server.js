@@ -20,6 +20,8 @@ var MIME =
 	'json':	'application/json',
 	'jsonp':	'application/javascript',
 	'png':	'image/png',
+	'svg':	'image/svg+xml',
+	'svgz':	'image/svg+xml',
 	'txt':	'text/plain',
 	'zip':	'application/zip',
 	'wasm':	'application/wasm',
