@@ -25,7 +25,7 @@ npm run start
 
 `config.json` にもろもろの設定があるので、それで設定可能。
 
-## MIME Type
+### MIME Type
 
 `config.json` のmimeに拡張子に対応するMIME Typeを追加できます。
 
@@ -40,3 +40,15 @@ npm run start
 	}
 }
 ```
+
+### 簡易SPA対応
+
+`spa` にファイルを指定すると、SPAモードになります。
+
+```
+{
+	spa: '/index.html'
+}
+```
+
+SPAモード時に存在しないかつファイル拡張子がないURLにアクセスすると、spaにて指定したファイルのコンテンツが返されます。

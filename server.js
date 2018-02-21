@@ -4,10 +4,6 @@ var path     = require( 'path' );
 
 var settings = require('./config.json');
 
-console.log( settings );
-
-Format( 'docs', 'localhost', 8080 );
-
 var MIME =
 {
 	'css':	'text/css',
@@ -53,6 +49,11 @@ function Format( docroot, host, port )
 			MIME[ key ] = settings.mime[ key ];
 		} );
 	}
+
+	if ( typeof settings.spa !== 'string' )
+	{
+		settings.spa = '';
+	}
 }
 
 function E404( res )
@@ -93,23 +94,40 @@ function ResponseBinary( res, filepath, mime )
 	} );
 }
 
+function CheckFile( filepath )
+{
+	if ( filepath.match( /\/$/ ) && !settings.spa ) { filepath += 'index.html'; }
+	filepath = path.join( settings.docroot, filepath );
+
+	if ( FileExists( filepath ) ) { return filepath; }
+
+	// Not SPA or file ... Not found.
+	if ( !settings.spa || filepath.match( /\.[^\.]+$/ ) ) { return ''; }
+
+	// SPA && path is not file( /, /test/, /hoge/fuga, etcc...)
+	filepath = path.join( settings.docroot, settings.spa );
+	if ( FileExists( filepath ) ) { return filepath; }
+
+	return '';
+}
+
 function ServerStart( settings )
 {
 	var server = http.createServer();
 	server.on( 'request', function ( req, res )
 	{
-		var filepath = ( req.url || '/' ).split( '?' )[ 0 ];
-		if ( filepath.match( /\/$/ ) ) { filepath += 'index.html'; }
-		filepath = path.join( settings.docroot, filepath );
+		var filepath = CheckFile( ( req.url || '/' ).split( '?' )[ 0 ] );
 
-		if ( !FileExists( filepath ) ) { return E404( res ); }
+		if ( !filepath ) { return E404( res ); }
 
 		var extname = path.extname( filepath ).replace( '.', '' );
 		var mime = MIME[ extname ] || 'text/plain';
 
-		if ( mime.indexOf( 'text/' ) === 0 ) {
+		if ( mime.indexOf( 'text/' ) === 0 )
+		{
 			ResponseText( res, filepath, mime );
-		} else {
+		} else
+		{
 			ResponseBinary( res, filepath, mime );
 		}
 	} );
@@ -117,5 +135,9 @@ function ServerStart( settings )
 	console.log( settings.host + ( settings.port === 80 ?  '' : ':' + settings.port ) );
 	server.listen( settings.port, settings.host );
 }
+
+console.log( settings );
+
+Format( 'docs', 'localhost', 8080 );
 
 ServerStart( settings );
